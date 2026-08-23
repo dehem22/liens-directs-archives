@@ -1,1 +1,413 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Liens Directs - Archives (Formulaire 2)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 720px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f4f6f8;
+            color: #1a1a1a;
+        }
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-top: 0;
+            color: #1b4332;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        select, input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            height: 75px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            background-color: #2d6a4f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1b4332;
+        }
+        .reset-btn {
+            background-color: #6c757d;
+        }
+        .reset-btn:hover {
+            background-color: #5a6268;
+        }
+        .result-box {
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .copy-btn {
+            background-color: #28a745;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+        .warning-banner {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 0.88em;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+        details {
+            margin-top: 12px;
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 0.9em;
+        }
+        summary {
+            font-weight: bold;
+            color: #1b4332;
+            cursor: pointer;
+        }
+        details ol {
+            margin: 10px 0 0 0;
+            padding-left: 20px;
+            line-height: 1.5;
+        }
+        details code {
+            background-color: #c8e6c9;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
 
+<div class="card">
+    <h2>Générateur de Lien Direct / Permalien - Archives</h2>
+
+    <!-- Sélection du dépôt d'archives -->
+    <label for="archiveSelect">Choisis le dépôt d'archives :</label>
+    <select id="archiveSelect" onchange="changerArchive()">
+        <option value="corse">AD Corse (THOT)</option>
+        <option value="brive">AM Brive-la-Gaillarde (THOT)</option>
+        <option value="nancy">AM Nancy (Forcé HD)</option>
+        <option value="valenciennes">AM Valenciennes (THOT)</option>
+        <option value="saint_etienne">AM Saint-Étienne (Arkaïa / Permalien)</option>
+    </select>
+
+    <!-- Avertissement THOT -->
+    <div id="warningBanner" class="warning-banner">
+        <strong>⚠️ Attention :</strong> Sur THOT, ce lien pointe directement vers le fichier image JPG. Il permet d'accéder à l'image haute définition ou de la télécharger directement, mais ne contient pas les commandes de navigation de la visionneuse.
+    </div>
+
+    <!-- Champ URL -->
+    <label id="urlLabel" for="urlInput">URL de requête F12 complète :</label>
+    <textarea id="urlInput" placeholder="" oninput="genererLien()"></textarea>
+
+    <!-- Bloc d'Aide Dynamique -->
+    <details id="helpDetails" open>
+        <summary id="helpSummary">Où trouver l'URL de requête exacte avec la touche F12 ?</summary>
+        <div id="helpContent"></div>
+    </details>
+
+    <!-- Champ Page / Vue -->
+    <label for="pageInput">N° de la vue désiré :</label>
+    <input type="number" id="pageInput" placeholder="Ex: 12" min="1" oninput="genererLien()">
+
+    <!-- Boutons d'action -->
+    <div class="btn-group">
+        <button type="button" id="genBtn" onclick="genererLien()">Générer le lien</button>
+        <button type="button" class="reset-btn" onclick="reinitialiser()">Effacer</button>
+    </div>
+
+    <div id="errorMsg" class="error"></div>
+
+    <!-- Conteneur de Résultat -->
+    <div id="resultContainer" style="display: none; margin-top: 20px;">
+        <label id="resultLabel">Lien direct :</label>
+        <div id="resultUrl" class="result-box"></div>
+        <button type="button" id="copyBtn" class="copy-btn" onclick="copierUrl()">Copier le lien</button>
+    </div>
+</div>
+
+<script>
+const config = {
+    corse: {
+        label: "URL de requête F12 complète :",
+        placeholder: "Ex: https://archives.isula.corsica/GEDTHOT5/PROD/.../FRAD2B_12NUM_000031_0026.JPG",
+        showWarning: true,
+        helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Corse) ?",
+        helpHtml: `<ol>
+            <li>Dans la visionneuse de THOT, appuie sur la touche <strong>F12</strong>.</li>
+            <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
+            <li>Tourne une page : un fichier image apparaît (ex: <code>FRAD2B_12NUM_000031_0026.JPG</code>).</li>
+            <li>Clique sur la ligne, puis dans <strong>En-têtes</strong> (Headers), copie l'<strong>URL de la requête</strong>.</li>
+        </ol>`
+    },
+    brive: {
+        label: "URL de requête F12 complète :",
+        placeholder: "Ex: https://archives.brive.fr/GEDTHOTP/.../FRAC19031_1E_..._0001.JPG",
+        showWarning: true,
+        helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Brive) ?",
+        helpHtml: `<ol>
+            <li>Dans la visionneuse de THOT, appuie sur la touche <strong>F12</strong>.</li>
+            <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
+            <li>Tourne une page : un fichier image apparaît.</li>
+            <li>Fais un clic droit sur la ligne de l'image et choisis <strong>Copier l'URL</strong>.</li>
+        </ol>`
+    },
+    nancy: {
+        label: "URL d'image copiée (Standard ou HD) :",
+        placeholder: "Ex: https://recherche-archives.nancy.fr/viewer/index.php/show/default/2_E/2_E_296/FRAC54395_2_Num_2E_296_041.jpg",
+        showWarning: false,
+        helpSummary: "Mode d'emploi (AM Nancy)",
+        helpHtml: `<ol>
+            <li>Fais un clic droit sur l'image dans le registre à Nancy et sélectionne <strong>Copier l'adresse de l'image</strong>.</li>
+            <li>Colle-la ci-dessus : le script transforme automatiquement le lien pour forcer l'affichage en Haute Définition (HD).</li>
+        </ol>`
+    },
+    valenciennes: {
+        label: "URL de requête F12 complète :",
+        placeholder: "Ex: https://archives-en-ligne.valenciennes.fr/GEDTHOTP/Valenciennes/.../FRAC059606_1E730_0012.jpg",
+        showWarning: true,
+        helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Valenciennes) ?",
+        helpHtml: `<ol>
+            <li>Dans la visionneuse de THOT, appuie sur la touche <strong>F12</strong>.</li>
+            <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
+            <li>Tourne une page : un fichier image apparaît dans la liste.</li>
+            <li>Fais un clic droit sur la ligne de l'image et choisis <strong>Copier l'URL</strong>.</li>
+        </ol>`
+    },
+    saint_etienne: {
+        label: "URL longue de la visionneuse :",
+        placeholder: "Collez l'URL complexe d'origine d'Arkaïa...",
+        showWarning: false,
+        helpSummary: "Mode d'emploi (AM Saint-Étienne)",
+        helpHtml: `<ol>
+            <li>Copie l'URL longue directement depuis la barre d'adresse de ton navigateur.</li>
+            <li>Colle-la ci-dessus : le script génère un permalien propre et nettoyé.</li>
+        </ol>`
+    }
+};
+
+const aliasMap = {
+    'corse': 'corse',
+    'adcorse': 'corse',
+    'brive': 'brive',
+    'ambrive': 'brive',
+    'nancy': 'nancy',
+    'amnancy': 'nancy',
+    'valenciennes': 'valenciennes',
+    'amvalenciennes': 'valenciennes',
+    'saint-etienne': 'saint_etienne',
+    'saint_etienne': 'saint_etienne',
+    'saintetienne': 'saint_etienne',
+    'am-saint-etienne': 'saint_etienne'
+};
+
+function initialiserParametresUrl() {
+    const params = new URLSearchParams(window.location.search);
+    let paramArchive = params.get('archive') || params.get('depot') || params.get('ville');
+
+    if (!paramArchive && window.location.hash) {
+        paramArchive = window.location.hash.replace('#', '');
+    }
+
+    if (paramArchive) {
+        const cléNormalisée = paramArchive.toLowerCase().trim();
+        if (aliasMap[cléNormalisée]) {
+            document.getElementById('archiveSelect').value = aliasMap[cléNormalisée];
+        }
+    }
+    changerArchive();
+}
+
+function changerArchive() {
+    const archive = document.getElementById('archiveSelect').value;
+    const c = config[archive];
+
+    document.getElementById('urlLabel').innerText = c.label;
+    document.getElementById('urlInput').placeholder = c.placeholder;
+    document.getElementById('warningBanner').style.display = c.showWarning ? 'block' : 'none';
+    document.getElementById('helpSummary').innerText = c.helpSummary;
+    document.getElementById('helpContent').innerHTML = c.helpHtml;
+
+    reinitialiser();
+}
+
+function genererLien() {
+    const archive = document.getElementById('archiveSelect').value;
+    const rawInput = document.getElementById('urlInput').value.trim();
+    let pageNum = parseInt(document.getElementById('pageInput').value, 10);
+
+    const errorMsg = document.getElementById('errorMsg');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultUrl = document.getElementById('resultUrl');
+    const copyBtn = document.getElementById('copyBtn');
+
+    errorMsg.innerText = "";
+    resultContainer.style.display = "none";
+    copyBtn.innerText = "Copier le lien";
+
+    if (!rawInput) return;
+
+    if (archive === 'corse' || archive === 'brive' || archive === 'valenciennes') {
+        if (isNaN(pageNum) || pageNum < 1) return;
+
+        const lastSlashIndex = rawInput.lastIndexOf('/');
+        if (lastSlashIndex === -1) return;
+
+        const folderPath = rawInput.substring(0, lastSlashIndex + 1);
+        const fileName = rawInput.substring(lastSlashIndex + 1);
+        const match = fileName.match(/^(.+_)(\d{3,4})\.(jpg|jpeg)$/i);
+
+        if (match) {
+            const filePrefix = match[1];
+            const digitsCount = match[2].length;
+            const ext = match[3];
+            const numPagePadded = pageNum.toString().padStart(digitsCount, '0');
+            
+            resultUrl.innerText = `${folderPath}${filePrefix}${numPagePadded}.${ext.toUpperCase()}`;
+            resultContainer.style.display = "block";
+        } else {
+            errorMsg.innerText = "Format d'URL THOT non reconnu. Assure-toi d'avoir copié le lien image complet.";
+        }
+    }
+
+    else if (archive === 'nancy') {
+        if (isNaN(pageNum) || pageNum < 1) return;
+
+        let hdUrl = rawInput.replace(/\/show\/[^\/]+\//i, '/show/full/');
+        const pagePadded = String(pageNum).padStart(3, '0');
+        const permalienHD = hdUrl.replace(/_\d{3,4}\.jpg$/i, `_${pagePadded}.jpg`);
+
+        resultUrl.innerText = permalienHD;
+        resultContainer.style.display = "block";
+    }
+
+    else if (archive === 'saint_etienne') {
+        let systemKey1 = "arko_default_619517ef1a5d5";
+        let arkoFiche = "";
+        let systemKey2 = "arko_default_61938e2788aec";
+        let idImage = "";
+
+        const matchFull = rawInput.match(/visionneuse-infos\/([^\/]+)\/(arko_fiche_[a-z0-9]+)\/([^\/]+)(?:\/image\/(\d+))?/i);
+
+        if (matchFull) {
+            systemKey1 = matchFull[1];
+            arkoFiche = matchFull[2];
+            systemKey2 = matchFull[3];
+            if (matchFull[4]) idImage = matchFull[4];
+        } else {
+            const matchesFiche = [...rawInput.matchAll(/arko_fiche_([a-z0-9]+)/gi)];
+            if (matchesFiche.length > 0) {
+                arkoFiche = "arko_fiche_" + matchesFiche[matchesFiche.length - 1][1];
+            }
+            const matchImg = rawInput.match(/\/image\/(\d+)/i);
+            if (matchImg) idImage = matchImg[1];
+        }
+
+        if (isNaN(pageNum)) {
+            const hashMatch = rawInput.match(/\|0\|(\d+)(?:[^\d]|$)/);
+            if (hashMatch && hashMatch[1]) {
+                pageNum = parseInt(hashMatch[1], 10) + 1;
+                document.getElementById('pageInput').value = pageNum;
+            } else {
+                const slashMatch = rawInput.match(/\/(\d+)$/);
+                if (slashMatch && slashMatch[1]) {
+                    pageNum = parseInt(slashMatch[1], 10) + 1;
+                    document.getElementById('pageInput').value = pageNum;
+                }
+            }
+        }
+
+        if (!arkoFiche) {
+            errorMsg.innerText = "Impossible de trouver la clé arko_fiche dans l'URL.";
+            return;
+        }
+
+        if (isNaN(pageNum) || pageNum < 1) {
+            errorMsg.innerText = "Veuillez indiquer un numéro de vue valide.";
+            return;
+        }
+
+        const indexVue = pageNum - 1;
+        let urlFinale = idImage
+            ? `https://archives.saint-etienne.fr/recherches-et-consultation-1/recherche-documentaire/genealogie#/_recherche-api/visionneuse-infos/${systemKey1}/${arkoFiche}/${systemKey2}/image/${idImage}/${indexVue}`
+            : `https://archives.saint-etienne.fr/recherches-et-consultation-1/recherche-documentaire/genealogie#/_recherche-api/visionneuse-infos/${systemKey1}/${arkoFiche}/${systemKey2}/${indexVue}`;
+
+        resultUrl.innerText = urlFinale;
+        resultContainer.style.display = "block";
+    }
+}
+
+function copierUrl() {
+    const textToCopy = document.getElementById('resultUrl').innerText;
+    const copyBtn = document.getElementById('copyBtn');
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        copyBtn.innerText = "Copié !";
+        setTimeout(() => {
+            copyBtn.innerText = "Copier le lien";
+        }, 2000);
+    });
+}
+
+function reinitialiser() {
+    document.getElementById('urlInput').value = "";
+    document.getElementById('pageInput').value = "";
+    document.getElementById('errorMsg').innerText = "";
+    document.getElementById('resultContainer').style.display = "none";
+}
+
+window.onload = initialiserParametresUrl;
+</script>
+
+</body>
+</html>
