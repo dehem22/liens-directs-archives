@@ -137,7 +137,6 @@
         <option value="corse">AD Corse (THOT)</option>
         <option value="brive">AM Brive-la-Gaillarde (THOT)</option>
         <option value="nancy">AM Nancy (Forcé HD)</option>
-        <option value="valenciennes">AM Valenciennes (THOT)</option>
         <option value="saint_etienne">AM Saint-Étienne (Arkaïa / Permalien)</option>
     </select>
 
@@ -212,18 +211,6 @@ const config = {
             <li>Colle-la ci-dessus : le script transforme automatiquement le lien pour forcer l'affichage en Haute Définition (HD).</li>
         </ol>`
     },
-    valenciennes: {
-        label: "URL de requête F12 complète :",
-        placeholder: "Ex: https://archives-en-ligne.valenciennes.fr/GEDTHOTP/Valenciennes/.../FRAC059606_1E730_0012.jpg",
-        showWarning: true,
-        helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Valenciennes) ?",
-        helpHtml: `<ol>
-            <li>Dans la visionneuse de THOT, appuie sur la touche <strong>F12</strong>.</li>
-            <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
-            <li>Tourne une page : un fichier image apparaît dans la liste.</li>
-            <li>Fais un clic droit sur la ligne de l'image et choisis <strong>Copier l'URL</strong>.</li>
-        </ol>`
-    },
     saint_etienne: {
         label: "URL longue de la visionneuse :",
         placeholder: "Collez l'URL complexe d'origine d'Arkaïa...",
@@ -243,8 +230,6 @@ const aliasMap = {
     'ambrive': 'brive',
     'nancy': 'nancy',
     'amnancy': 'nancy',
-    'valenciennes': 'valenciennes',
-    'amvalenciennes': 'valenciennes',
     'saint-etienne': 'saint_etienne',
     'saint_etienne': 'saint_etienne',
     'saintetienne': 'saint_etienne',
@@ -297,7 +282,7 @@ function genererLien() {
 
     if (!rawInput) return;
 
-    if (archive === 'corse' || archive === 'brive' || archive === 'valenciennes') {
+    if (archive === 'corse' || archive === 'brive') {
         if (isNaN(pageNum) || pageNum < 1) return;
 
         const lastSlashIndex = rawInput.lastIndexOf('/');
