@@ -85,6 +85,23 @@
         .copy-btn:hover {
             background-color: #218838;
         }
+        .open-btn {
+            background-color: #17a2b8;
+            margin-top: 10px;
+            width: 100%;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+            padding: 12px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .open-btn:hover {
+            background-color: #138496;
+        }
         .warning-banner {
             background-color: #fff3cd;
             border: 1px solid #ffeeba;
@@ -137,7 +154,6 @@
         <option value="corse">AD Corse (THOT)</option>
         <option value="brive">AM Brive-la-Gaillarde (THOT)</option>
         <option value="nancy">AM Nancy (Forcé HD)</option>
-        <option value="saint_etienne">AM Saint-Étienne (Arkaïa / Permalien)</option>
     </select>
 
     <!-- Avertissement THOT -->
@@ -172,6 +188,7 @@
         <label id="resultLabel">Lien direct :</label>
         <div id="resultUrl" class="result-box"></div>
         <button type="button" id="copyBtn" class="copy-btn" onclick="copierUrl()">Copier le lien</button>
+        <a id="openBtn" class="open-btn" href="#" target="_blank">Ouvrir le lien</a>
     </div>
 </div>
 
@@ -210,16 +227,6 @@ const config = {
             <li>Fais un clic droit sur l'image dans le registre à Nancy et sélectionne <strong>Copier l'adresse de l'image</strong>.</li>
             <li>Colle-la ci-dessus : le script transforme automatiquement le lien pour forcer l'affichage en Haute Définition (HD).</li>
         </ol>`
-    },
-    saint_etienne: {
-        label: "URL longue de la visionneuse :",
-        placeholder: "Collez l'URL complexe d'origine d'Arkaïa...",
-        showWarning: false,
-        helpSummary: "Mode d'emploi (AM Saint-Étienne)",
-        helpHtml: `<ol>
-            <li>Copie l'URL longue directement depuis la barre d'adresse de ton navigateur.</li>
-            <li>Colle-la ci-dessus : le script génère un permalien propre et nettoyé.</li>
-        </ol>`
     }
 };
 
@@ -229,11 +236,7 @@ const aliasMap = {
     'brive': 'brive',
     'ambrive': 'brive',
     'nancy': 'nancy',
-    'amnancy': 'nancy',
-    'saint-etienne': 'saint_etienne',
-    'saint_etienne': 'saint_etienne',
-    'saintetienne': 'saint_etienne',
-    'am-saint-etienne': 'saint_etienne'
+    'amnancy': 'nancy'
 };
 
 function initialiserParametresUrl() {
@@ -275,12 +278,15 @@ function genererLien() {
     const resultContainer = document.getElementById('resultContainer');
     const resultUrl = document.getElementById('resultUrl');
     const copyBtn = document.getElementById('copyBtn');
+    const openBtn = document.getElementById('openBtn');
 
     errorMsg.innerText = "";
     resultContainer.style.display = "none";
     copyBtn.innerText = "Copier le lien";
 
     if (!rawInput) return;
+
+    let urlFinale = "";
 
     if (archive === 'corse' || archive === 'brive') {
         if (isNaN(pageNum) || pageNum < 1) return;
@@ -298,10 +304,10 @@ function genererLien() {
             const ext = match[3];
             const numPagePadded = pageNum.toString().padStart(digitsCount, '0');
             
-            resultUrl.innerText = `${folderPath}${filePrefix}${numPagePadded}.${ext.toUpperCase()}`;
-            resultContainer.style.display = "block";
+            urlFinale = `${folderPath}${filePrefix}${numPagePadded}.${ext.toUpperCase()}`;
         } else {
             errorMsg.innerText = "Format d'URL THOT non reconnu. Assure-toi d'avoir copié le lien image complet.";
+            return;
         }
     }
 
@@ -310,64 +316,12 @@ function genererLien() {
 
         let hdUrl = rawInput.replace(/\/show\/[^\/]+\//i, '/show/full/');
         const pagePadded = String(pageNum).padStart(3, '0');
-        const permalienHD = hdUrl.replace(/_\d{3,4}\.jpg$/i, `_${pagePadded}.jpg`);
-
-        resultUrl.innerText = permalienHD;
-        resultContainer.style.display = "block";
+        urlFinale = hdUrl.replace(/_\d{3,4}\.jpg$/i, `_${pagePadded}.jpg`);
     }
 
-    else if (archive === 'saint_etienne') {
-        let systemKey1 = "arko_default_619517ef1a5d5";
-        let arkoFiche = "";
-        let systemKey2 = "arko_default_61938e2788aec";
-        let idImage = "";
-
-        const matchFull = rawInput.match(/visionneuse-infos\/([^\/]+)\/(arko_fiche_[a-z0-9]+)\/([^\/]+)(?:\/image\/(\d+))?/i);
-
-        if (matchFull) {
-            systemKey1 = matchFull[1];
-            arkoFiche = matchFull[2];
-            systemKey2 = matchFull[3];
-            if (matchFull[4]) idImage = matchFull[4];
-        } else {
-            const matchesFiche = [...rawInput.matchAll(/arko_fiche_([a-z0-9]+)/gi)];
-            if (matchesFiche.length > 0) {
-                arkoFiche = "arko_fiche_" + matchesFiche[matchesFiche.length - 1][1];
-            }
-            const matchImg = rawInput.match(/\/image\/(\d+)/i);
-            if (matchImg) idImage = matchImg[1];
-        }
-
-        if (isNaN(pageNum)) {
-            const hashMatch = rawInput.match(/\|0\|(\d+)(?:[^\d]|$)/);
-            if (hashMatch && hashMatch[1]) {
-                pageNum = parseInt(hashMatch[1], 10) + 1;
-                document.getElementById('pageInput').value = pageNum;
-            } else {
-                const slashMatch = rawInput.match(/\/(\d+)$/);
-                if (slashMatch && slashMatch[1]) {
-                    pageNum = parseInt(slashMatch[1], 10) + 1;
-                    document.getElementById('pageInput').value = pageNum;
-                }
-            }
-        }
-
-        if (!arkoFiche) {
-            errorMsg.innerText = "Impossible de trouver la clé arko_fiche dans l'URL.";
-            return;
-        }
-
-        if (isNaN(pageNum) || pageNum < 1) {
-            errorMsg.innerText = "Veuillez indiquer un numéro de vue valide.";
-            return;
-        }
-
-        const indexVue = pageNum - 1;
-        let urlFinale = idImage
-            ? `https://archives.saint-etienne.fr/recherches-et-consultation-1/recherche-documentaire/genealogie#/_recherche-api/visionneuse-infos/${systemKey1}/${arkoFiche}/${systemKey2}/image/${idImage}/${indexVue}`
-            : `https://archives.saint-etienne.fr/recherches-et-consultation-1/recherche-documentaire/genealogie#/_recherche-api/visionneuse-infos/${systemKey1}/${arkoFiche}/${systemKey2}/${indexVue}`;
-
+    if (urlFinale) {
         resultUrl.innerText = urlFinale;
+        openBtn.href = urlFinale;
         resultContainer.style.display = "block";
     }
 }
