@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Liens Directs - Archives (Formulaire 2)</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 720px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f4f6f8;
+            color: #1a1a1a;
+        }
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-top: 0;
+            color: #1b4332;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+        select, input[type="text"], input[type="number"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        textarea {
+            resize: vertical;
+            height: 75px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            background-color: #2d6a4f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: #1b4332;
+        }
+        .reset-btn {
+            background-color: #6c757d;
+        }
+        .reset-btn:hover {
+            background-color: #5a6268;
+        }
+        .result-box {
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .copy-btn {
+            background-color: #28a745;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .copy-btn:hover {
+            background-color: #218838;
+        }
+        .open-btn {
+            background-color: #17a2b8;
+            margin-top: 10px;
+            width: 100%;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+            box-sizing: border-box;
+            padding: 12px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .open-btn:hover {
+            background-color: #138496;
+        }
+        .warning-banner {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 0.88em;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+        details {
+            margin-top: 12px;
+            background-color: #e8f5e9;
+            border: 1px solid #c8e6c9;
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 0.9em;
+        }
+        summary {
+            font-weight: bold;
+            color: #1b4332;
+            cursor: pointer;
+        }
+        details ol {
+            margin: 10px 0 0 0;
+            padding-left: 20px;
+            line-height: 1.5;
+        }
+        details code {
+            background-color: #c8e6c9;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .f12-note {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            line-height: 1.5;
+        }
+        .f12-note ul {
+            margin: 6px 0 0 0;
+            padding-left: 20px;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>Générateur de Lien Direct / Permalien - Archives</h2>
+
+    <!-- Sélection du dépôt d'archives -->
+    <label for="archiveSelect">Choisis le dépôt d'archives :</label>
+    <select id="archiveSelect" onchange="changerArchive()">
+        <option value="corse">AD Corse (THOT)</option>
+        <option value="nancy">AM Nancy (Forcé HD)</option>
+        <option value="saintetienne">AM Saint-Étienne (Loire)</option>
+    </select>
+
+    <!-- Avertissement THOT -->
+    <div id="warningBanner" class="warning-banner">
+        <strong>⚠️ Attention :</strong> Sur THOT, ce lien pointe directement vers le fichier image JPG. Il permet d'accéder à l'image haute définition ou de la télécharger directement, mais ne contient pas les commandes de navigation de la visionneuse.
+    </div>
+
+    <!-- Champ URL -->
+    <label id="urlLabel" for="urlInput">URL de requête F12 complète :</label>
+    <textarea id="urlInput" placeholder="" oninput="genererLien()"></textarea>
+
+    <!-- Bloc d'Aide Dynamique -->
+    <details id="helpDetails" open>
+        <summary id="helpSummary">Où trouver l'URL de requête exacte avec la touche F12 ?</summary>
+        <div id="helpContent"></div>
+    </details>
+
+    <!-- Champ Page / Vue -->
+    <label for="pageInput">N° de la vue désiré :</label>
+    <input type="number" id="pageInput" placeholder="Ex: 12" min="1" oninput="genererLien()">
+
+    <!-- Boutons d'action -->
+    <div class="btn-group">
+        <button type="button" id="genBtn" onclick="genererLien()">Générer le lien</button>
+        <button type="button" class="reset-btn" onclick="reinitialiser()">Effacer</button>
+    </div>
+
+    <div id="errorMsg" class="error"></div>
+
+    <!-- Conteneur de Résultat -->
+    <div id="resultContainer" style="display: none; margin-top: 20px;">
+        <label id="resultLabel">Lien direct :</label>
+        <div id="resultUrl" class="result-box"></div>
+        <button type="button" id="copyBtn" class="copy-btn" onclick="copierUrl()">Copier le lien</button>
+        <a id="openBtn" class="open-btn" href="#" target="_blank">Ouvrir le lien</a>
+    </div>
+</div>
+
+<script>
+// Note affichée pour les dépôts qui utilisent la touche F12 (outils de développement)
+const noteF12 = `<div class="f12-note">
+    <strong>La touche F12 ne répond pas ? (PC portables ASUS et autres)</strong>
+    <ul>
+        <li>Sur beaucoup de PC portables, notamment les ASUS, la touche <strong>F12</strong> est détournée par une fonction (volume, luminosité, etc.). Appuie alors sur <strong>Fn + F12</strong>.</li>
+        <li>Sur la plupart des modèles ASUS, <strong>Fn + Échap</strong> active ou désactive le verrouillage de la touche Fn : une fois verrouillée, <strong>F12</strong> seule suffit.</li>
+        <li>Autre solution : <strong>Ctrl + Maj + I</strong>, ou clic droit sur la page puis <strong>Inspecter</strong>.</li>
+    </ul>
+</div>`;
+
+const config = {
+    corse: {
+        label: "URL de requête F12 complète :",
+        placeholder: "Ex: https://archives.isula.corsica/GEDTHOT5/PROD/.../FRAD2B_12NUM_000031_0026.JPG",
+        showWarning: true,
+        usesF12: true,
+        helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Corse) ?",
+        helpHtml: `<ol>
+            <li>Dans la visionneuse de THOT, appuie sur la touche <strong>F12</strong> (ou <strong>Fn + F12</strong> sur certains portables, voir ci-dessous).</li>
+            <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
+            <li>Tourne une page : un fichier image apparaît (ex: <code>FRAD2B_12NUM_000031_0026.JPG</code>).</li>
+            <li>Clique sur la ligne, puis dans <strong>En-têtes</strong> (Headers), copie l'<strong>URL de la requête</strong>.</li>
+        </ol>`
+    },
+    nancy: {
+        label: "URL d'image copiée (Standard ou HD) :",
+        placeholder: "Ex: https://recherche-archives.nancy.fr/viewer/index.php/show/default/2_E/2_E_296/FRAC54395_2_Num_2E_296_041.jpg",
+        showWarning: false,
+        usesF12: false,
+        helpSummary: "Mode d'emploi (AM Nancy)",
+        helpHtml: `<ol>
+            <li>Fais un clic droit sur l'image dans le registre à Nancy et sélectionne <strong>Copier l'adresse de l'image</strong>.</li>
+            <li>Colle-la ci-dessus : le script transforme automatiquement le lien pour forcer l'affichage en Haute Définition (HD).</li>
+        </ol>`
+    },
+    saintetienne: {
+        label: "URL de requête F12 complète :",
+        placeholder: "Ex: https://archives.saint-etienne.fr/_recherche-images/show/152004/image/62845/0",
+        showWarning: false,
+        usesF12: true,
+        helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Saint-Étienne) ?",
+        helpHtml: `<ol>
+            <li>Ouvre le registre dans la visionneuse, puis appuie sur la touche <strong>F12</strong> (ou <strong>Fn + F12</strong> sur certains portables, voir ci-dessous).</li>
+            <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
+            <li>Tourne une page et repère l'adresse qui contient <code>/_recherche-images/show/…/image/…/</code> suivie d'un nombre.</li>
+            <li>Copie cette <strong>URL de la requête</strong> et colle-la ci-dessus. Le script ne modifie que le nombre final.</li>
+            <li>Le site numérote ses vues à partir de 0 : le script retire automatiquement 1 au numéro saisi (vue 1 = première page du registre).</li>
+        </ol>`
+    }
+};
+
+const aliasMap = {
+    'corse': 'corse',
+    'adcorse': 'corse',
+    'nancy': 'nancy',
+    'amnancy': 'nancy',
+    'saintetienne': 'saintetienne',
+    'saint-etienne': 'saintetienne',
+    'amsaintetienne': 'saintetienne',
+    'stetienne': 'saintetienne',
+    'loire': 'saintetienne'
+};
+
+function initialiserParametresUrl() {
+    const params = new URLSearchParams(window.location.search);
+    let paramArchive = params.get('archive') || params.get('depot') || params.get('ville');
+
+    if (!paramArchive && window.location.hash) {
+        paramArchive = window.location.hash.replace('#', '');
+    }
+
+    if (paramArchive) {
+        const cléNormalisée = paramArchive.toLowerCase().trim();
+        if (aliasMap[cléNormalisée]) {
+            document.getElementById('archiveSelect').value = aliasMap[cléNormalisée];
+        }
+    }
+    changerArchive();
+}
+
+function changerArchive() {
+    const archive = document.getElementById('archiveSelect').value;
+    const c = config[archive];
+
+    document.getElementById('urlLabel').innerText = c.label;
+    document.getElementById('urlInput').placeholder = c.placeholder;
+    document.getElementById('warningBanner').style.display = c.showWarning ? 'block' : 'none';
+    document.getElementById('helpSummary').innerText = c.helpSummary;
+    document.getElementById('helpContent').innerHTML = c.helpHtml + (c.usesF12 ? noteF12 : '');
+
+    reinitialiser();
+}
+
+function genererLien() {
+    const archive = document.getElementById('archiveSelect').value;
+    const rawInput = document.getElementById('urlInput').value.trim();
+    let pageNum = parseInt(document.getElementById('pageInput').value, 10);
+
+    const errorMsg = document.getElementById('errorMsg');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultUrl = document.getElementById('resultUrl');
+    const copyBtn = document.getElementById('copyBtn');
+    const openBtn = document.getElementById('openBtn');
+
+    errorMsg.innerText = "";
+    resultContainer.style.display = "none";
+    copyBtn.innerText = "Copier le lien";
+
+    if (!rawInput) return;
+
+    let urlFinale = "";
+
+    if (archive === 'corse') {
+        if (isNaN(pageNum) || pageNum < 1) return;
+
+        const lastSlashIndex = rawInput.lastIndexOf('/');
+        if (lastSlashIndex === -1) return;
+
+        const folderPath = rawInput.substring(0, lastSlashIndex + 1);
+        const fileName = rawInput.substring(lastSlashIndex + 1);
+        const match = fileName.match(/^(.+_)(\d{3,4})\.(jpg|jpeg)$/i);
+
+        if (match) {
+            const filePrefix = match[1];
+            const digitsCount = match[2].length;
+            const ext = match[3];
+            const numPagePadded = pageNum.toString().padStart(digitsCount, '0');
+
+            urlFinale = `${folderPath}${filePrefix}${numPagePadded}.${ext.toUpperCase()}`;
+        } else {
+            errorMsg.innerText = "Format d'URL THOT non reconnu. Assure-toi d'avoir copié le lien image complet.";
+            return;
+        }
+    }
+
+    else if (archive === 'nancy') {
+        if (isNaN(pageNum) || pageNum < 1) return;
+
+        let hdUrl = rawInput.replace(/\/show\/[^\/]+\//i, '/show/full/');
+        const pagePadded = String(pageNum).padStart(3, '0');
+        urlFinale = hdUrl.replace(/_\d{3,4}\.jpg$/i, `_${pagePadded}.jpg`);
+    }
+
+    else if (archive === 'saintetienne') {
+        if (isNaN(pageNum) || pageNum < 1) return;
+
+        // Forme attendue : https://archives.saint-etienne.fr/_recherche-images/show/<id>/image/<id>/<n° de vue, base 0>
+        // Recherche non ancrée : si l'adresse a été collée plusieurs fois ou avec du texte autour, la première occurrence est utilisée
+        const match = rawInput.match(/(https?:\/\/[^\/\s]*saint-etienne\.fr\/_recherche-images\/show\/\d+\/image\/\d+\/)(\d+)/i);
+
+        if (match) {
+            // Le site numérote les vues à partir de 0 : vue 1 affichée = 0 dans l'adresse
+            urlFinale = `${match[1]}${pageNum - 1}`;
+        } else {
+            errorMsg.innerText = "Format d'URL Saint-Étienne non reconnu. L'adresse doit ressembler à .../_recherche-images/show/152004/image/62845/0";
+            return;
+        }
+    }
+
+    if (urlFinale) {
+        resultUrl.innerText = urlFinale;
+        openBtn.href = urlFinale;
+        resultContainer.style.display = "block";
+    }
+}
+
+function copierUrl() {
+    const textToCopy = document.getElementById('resultUrl').innerText;
+    const copyBtn = document.getElementById('copyBtn');
+
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        copyBtn.innerText = "Copié !";
+        setTimeout(() => {
+            copyBtn.innerText = "Copier le lien";
+        }, 2000);
+    });
+}
+
+function reinitialiser() {
+    document.getElementById('urlInput').value = "";
+    document.getElementById('pageInput').value = "";
+    document.getElementById('errorMsg').innerText = "";
+    document.getElementById('resultContainer').style.display = "none";
+}
+
+window.onload = initialiserParametresUrl;
+</script>
+
+</body>
+</html>
