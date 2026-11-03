@@ -136,6 +136,18 @@
             border-radius: 3px;
             font-family: monospace;
         }
+        .f12-note {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 4px;
+            line-height: 1.5;
+        }
+        .f12-note ul {
+            margin: 6px 0 0 0;
+            padding-left: 20px;
+        }
         .error {
             color: #dc3545;
             font-weight: bold;
@@ -152,8 +164,8 @@
     <label for="archiveSelect">Choisis le dépôt d'archives :</label>
     <select id="archiveSelect" onchange="changerArchive()">
         <option value="corse">AD Corse (THOT)</option>
-        <option value="brive">AM Brive-la-Gaillarde (THOT)</option>
         <option value="nancy">AM Nancy (Forcé HD)</option>
+        <option value="saintetienne">AM Saint-Étienne (Loire)</option>
     </select>
 
     <!-- Avertissement THOT -->
@@ -193,39 +205,53 @@
 </div>
 
 <script>
+// Note affichée pour les dépôts qui utilisent la touche F12 (outils de développement)
+const noteF12 = `<div class="f12-note">
+    <strong>La touche F12 ne répond pas ? (PC portables ASUS et autres)</strong>
+    <ul>
+        <li>Sur beaucoup de PC portables, notamment les ASUS, la touche <strong>F12</strong> est détournée par une fonction (volume, luminosité, etc.). Appuie alors sur <strong>Fn + F12</strong>.</li>
+        <li>Sur la plupart des modèles ASUS, <strong>Fn + Échap</strong> active ou désactive le verrouillage de la touche Fn : une fois verrouillée, <strong>F12</strong> seule suffit.</li>
+        <li>Autre solution : <strong>Ctrl + Maj + I</strong>, ou clic droit sur la page puis <strong>Inspecter</strong>.</li>
+    </ul>
+</div>`;
+
 const config = {
     corse: {
         label: "URL de requête F12 complète :",
         placeholder: "Ex: https://archives.isula.corsica/GEDTHOT5/PROD/.../FRAD2B_12NUM_000031_0026.JPG",
         showWarning: true,
+        usesF12: true,
         helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Corse) ?",
         helpHtml: `<ol>
-            <li>Dans la visionneuse de THOT, appuie sur la touche <strong>F12</strong>.</li>
+            <li>Dans la visionneuse de THOT, appuie sur la touche <strong>F12</strong> (ou <strong>Fn + F12</strong> sur certains portables, voir ci-dessous).</li>
             <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
             <li>Tourne une page : un fichier image apparaît (ex: <code>FRAD2B_12NUM_000031_0026.JPG</code>).</li>
             <li>Clique sur la ligne, puis dans <strong>En-têtes</strong> (Headers), copie l'<strong>URL de la requête</strong>.</li>
-        </ol>`
-    },
-    brive: {
-        label: "URL de requête F12 complète :",
-        placeholder: "Ex: https://archives.brive.fr/GEDTHOTP/.../FRAC19031_1E_..._0001.JPG",
-        showWarning: true,
-        helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Brive) ?",
-        helpHtml: `<ol>
-            <li>Dans la visionneuse de THOT, appuie sur la touche <strong>F12</strong>.</li>
-            <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
-            <li>Tourne une page : un fichier image apparaît.</li>
-            <li>Fais un clic droit sur la ligne de l'image et choisis <strong>Copier l'URL</strong>.</li>
         </ol>`
     },
     nancy: {
         label: "URL d'image copiée (Standard ou HD) :",
         placeholder: "Ex: https://recherche-archives.nancy.fr/viewer/index.php/show/default/2_E/2_E_296/FRAC54395_2_Num_2E_296_041.jpg",
         showWarning: false,
+        usesF12: false,
         helpSummary: "Mode d'emploi (AM Nancy)",
         helpHtml: `<ol>
             <li>Fais un clic droit sur l'image dans le registre à Nancy et sélectionne <strong>Copier l'adresse de l'image</strong>.</li>
             <li>Colle-la ci-dessus : le script transforme automatiquement le lien pour forcer l'affichage en Haute Définition (HD).</li>
+        </ol>`
+    },
+    saintetienne: {
+        label: "URL de requête F12 complète :",
+        placeholder: "Ex: https://archives.saint-etienne.fr/_recherche-images/show/152004/image/62845/0",
+        showWarning: false,
+        usesF12: true,
+        helpSummary: "Où trouver l'URL de requête exacte avec la touche F12 (Saint-Étienne) ?",
+        helpHtml: `<ol>
+            <li>Ouvre le registre dans la visionneuse, puis appuie sur la touche <strong>F12</strong> (ou <strong>Fn + F12</strong> sur certains portables, voir ci-dessous).</li>
+            <li>Clique sur l'onglet <strong>Réseau</strong> (Network), puis filtre par <strong>Image</strong>.</li>
+            <li>Tourne une page et repère l'adresse qui contient <code>/_recherche-images/show/…/image/…/</code> suivie d'un nombre.</li>
+            <li>Copie cette <strong>URL de la requête</strong> et colle-la ci-dessus. Le script ne modifie que le nombre final.</li>
+            <li>Le site numérote ses vues à partir de 0 : le script retire automatiquement 1 au numéro saisi (vue 1 = première page du registre).</li>
         </ol>`
     }
 };
@@ -233,10 +259,13 @@ const config = {
 const aliasMap = {
     'corse': 'corse',
     'adcorse': 'corse',
-    'brive': 'brive',
-    'ambrive': 'brive',
     'nancy': 'nancy',
-    'amnancy': 'nancy'
+    'amnancy': 'nancy',
+    'saintetienne': 'saintetienne',
+    'saint-etienne': 'saintetienne',
+    'amsaintetienne': 'saintetienne',
+    'stetienne': 'saintetienne',
+    'loire': 'saintetienne'
 };
 
 function initialiserParametresUrl() {
@@ -264,7 +293,7 @@ function changerArchive() {
     document.getElementById('urlInput').placeholder = c.placeholder;
     document.getElementById('warningBanner').style.display = c.showWarning ? 'block' : 'none';
     document.getElementById('helpSummary').innerText = c.helpSummary;
-    document.getElementById('helpContent').innerHTML = c.helpHtml;
+    document.getElementById('helpContent').innerHTML = c.helpHtml + (c.usesF12 ? noteF12 : '');
 
     reinitialiser();
 }
@@ -288,7 +317,7 @@ function genererLien() {
 
     let urlFinale = "";
 
-    if (archive === 'corse' || archive === 'brive') {
+    if (archive === 'corse') {
         if (isNaN(pageNum) || pageNum < 1) return;
 
         const lastSlashIndex = rawInput.lastIndexOf('/');
@@ -303,7 +332,7 @@ function genererLien() {
             const digitsCount = match[2].length;
             const ext = match[3];
             const numPagePadded = pageNum.toString().padStart(digitsCount, '0');
-            
+
             urlFinale = `${folderPath}${filePrefix}${numPagePadded}.${ext.toUpperCase()}`;
         } else {
             errorMsg.innerText = "Format d'URL THOT non reconnu. Assure-toi d'avoir copié le lien image complet.";
@@ -317,6 +346,22 @@ function genererLien() {
         let hdUrl = rawInput.replace(/\/show\/[^\/]+\//i, '/show/full/');
         const pagePadded = String(pageNum).padStart(3, '0');
         urlFinale = hdUrl.replace(/_\d{3,4}\.jpg$/i, `_${pagePadded}.jpg`);
+    }
+
+    else if (archive === 'saintetienne') {
+        if (isNaN(pageNum) || pageNum < 1) return;
+
+        // Forme attendue : https://archives.saint-etienne.fr/_recherche-images/show/<id>/image/<id>/<n° de vue, base 0>
+        // Recherche non ancrée : si l'adresse a été collée plusieurs fois ou avec du texte autour, la première occurrence est utilisée
+        const match = rawInput.match(/(https?:\/\/[^\/\s]*saint-etienne\.fr\/_recherche-images\/show\/\d+\/image\/\d+\/)(\d+)/i);
+
+        if (match) {
+            // Le site numérote les vues à partir de 0 : vue 1 affichée = 0 dans l'adresse
+            urlFinale = `${match[1]}${pageNum - 1}`;
+        } else {
+            errorMsg.innerText = "Format d'URL Saint-Étienne non reconnu. L'adresse doit ressembler à .../_recherche-images/show/152004/image/62845/0";
+            return;
+        }
     }
 
     if (urlFinale) {
